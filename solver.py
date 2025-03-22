@@ -75,3 +75,20 @@ class Solver(object):
         print(model)
         print(name)
         print("The number of parameters: {}".format(num_params))
+
+    def update_lr(self, g_lr, d_lr):
+        """Decay learning rates of the generator and discriminator."""
+        for param_group in self.g_optimizer.param_groups:
+            param_group['lr'] = g_lr
+        for param_group in self.d_optimizer.param_groups:
+            param_group['lr'] = d_lr
+
+    def reset_grad(self):
+        """Reset the gradient buffers."""
+        self.g_optimizer.zero_grad()
+        self.d_optimizer.zero_grad()
+
+    def denorm(self, x):
+        """Convert the range from [-1, 1] to [0, 1]."""
+        out = (x + 1) / 2
+        return out.clamp_(0, 1)
