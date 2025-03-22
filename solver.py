@@ -2,6 +2,7 @@ from model import Generator
 from model import Discriminator
 from torchvision.utils import save_image
 import torch
+import os
 
 class Solver(object):
     """Solver for training and testing StarGAN."""
@@ -92,3 +93,25 @@ class Solver(object):
         """Convert the range from [-1, 1] to [0, 1]."""
         out = (x + 1) / 2
         return out.clamp_(0, 1)
+
+    def restore_model(self, resume_iters):
+        """Restore the trained generator and discriminator."""
+        print('Loading the trained models from step {}...'.format(resume_iters))
+        G_path = os.path.join(self.model_save_dir, '{}-G.ckpt'.format(resume_iters))
+        D_path = os.path.join(self.model_save_dir, '{}-D.ckpt'.format(resume_iters))
+        self.G.load_state_dict(torch.load(G_path, map_location=lambda storage, loc: storage))
+        self.D.load_state_dict(torch.load(D_path, map_location=lambda storage, loc: storage))
+        
+    def gradient_penalty(self, y, x):
+        """Compute gradient penalty: (L2_norm(dy/dx) - 1)**2."""
+        weight = torch.ones(y.size()).to(self.device)
+        dydx = torch.autograd.grad(outputs=y,
+                                   inputs=x,
+                                   grad_outputs=weight,
+                                   retain_graph=True,
+                                   create_graph=True,
+                                   only_inputs=True)[0]
+
+        dydx = dydx.view(dydx.size(0), -1)
+        dydx_l2norm = torch.sqrt(torch.sum(dydx**2, dim=1))
+        return torch.mean((dydx_l2norm-1)**2)
