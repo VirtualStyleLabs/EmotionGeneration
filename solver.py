@@ -132,3 +132,14 @@ class Solver(object):
 
             c_trg_list.append(c_trg.to(self.device))
         return c_trg_list
+    def classification_loss(self, logit, target):
+        """Compute binary or softmax cross entropy loss."""
+        return F.cross_entropy(logit, target)
+    
+    def compute_similarity_matrix(self, images):
+        """Compute cosine similarity between each pair of images in a batch."""
+        b, c, h, w = images.shape
+        images_flat = images.view(b, -1)  # Flatten to (B, C*H*W)
+        images_flat = F.normalize(images_flat, p=2, dim=1)  # Normalize
+        similarity_matrix = torch.matmul(images_flat, images_flat.T)  # Cosine similarity
+        return similarity_matrix
