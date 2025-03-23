@@ -115,3 +115,20 @@ class Solver(object):
         dydx = dydx.view(dydx.size(0), -1)
         dydx_l2norm = torch.sqrt(torch.sum(dydx**2, dim=1))
         return torch.mean((dydx_l2norm-1)**2)
+
+    def label2onehot(self, labels, dim):
+        """Convert label indices to one-hot vectors."""
+        batch_size = labels.size(0)
+        out = torch.zeros(batch_size, dim)
+        out[np.arange(batch_size), labels.long()] = 1
+        return out
+
+    def create_labels(self, c_org, c_dim=5, dataset='RaFD'):
+        """Generate target domain labels for debugging and testing."""
+        c_trg_list = []
+        for i in range(c_dim):
+            if dataset == 'RaFD':
+                c_trg = self.label2onehot(torch.ones(c_org.size(0))*i, c_dim)
+
+            c_trg_list.append(c_trg.to(self.device))
+        return c_trg_list
