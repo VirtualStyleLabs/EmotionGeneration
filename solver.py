@@ -3,6 +3,7 @@ from model import Discriminator
 from torchvision.utils import save_image
 import torch
 import os
+import torch.nn.functional as F
 
 class Solver(object):
     """Solver for training and testing StarGAN."""
@@ -143,3 +144,10 @@ class Solver(object):
         images_flat = F.normalize(images_flat, p=2, dim=1)  # Normalize
         similarity_matrix = torch.matmul(images_flat, images_flat.T)  # Cosine similarity
         return similarity_matrix
+
+    def competitive_loss(similarity_matrix, threshold=0.3):
+        """Encourage dissimilarity between different emotions."""
+        b = similarity_matrix.size(0)
+        target_matrix = torch.eye(b, device=similarity_matrix.device)  # Diagonal = 1
+        target_matrix[target_matrix == 0] = threshold  # Non-diagonal elements
+        return F.mse_loss(similarity_matrix, target_matrix)  # Match matrices
