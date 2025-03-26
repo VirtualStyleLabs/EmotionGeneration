@@ -4,6 +4,7 @@ from torchvision.utils import save_image
 import torch
 import os
 import torch.nn.functional as F
+import numpy as np
 
 class Solver(object):
     """Solver for training and testing StarGAN."""
@@ -128,10 +129,9 @@ class Solver(object):
         """Generate target domain labels for debugging and testing."""
         c_trg_list = []
         for i in range(c_dim):
-            if dataset == 'RaFD':
-                c_trg = self.label2onehot(torch.ones(c_org.size(0))*i, c_dim)
-
+            c_trg = self.label2onehot(torch.ones(c_org.size(0))*i, c_dim)
             c_trg_list.append(c_trg.to(self.device))
+            
         return c_trg_list
     def classification_loss(self, logit, target):
         """Compute binary or softmax cross entropy loss."""
@@ -145,9 +145,8 @@ class Solver(object):
         similarity_matrix = torch.matmul(images_flat, images_flat.T)  # Cosine similarity
         return similarity_matrix
 
-    def competitive_loss(similarity_matrix, threshold=0.3):
-        """Encourage dissimilarity between different emotions."""
-        b = similarity_matrix.size(0)
-        target_matrix = torch.eye(b, device=similarity_matrix.device)  # Diagonal = 1
-        target_matrix[target_matrix == 0] = threshold  # Non-diagonal elements
-        return F.mse_loss(similarity_matrix, target_matrix)  # Match matrices
+    def contrastive_loss(self, similarity_matrix, same_domain, margin=1.0):
+        """Compute contrastive loss for StarGAN."""
+        dist = 1 - similarity_matrix  # L2 distance
+        loss = (same_domain) * dist.pow(2) + ( 1 - same_domain ) * F.relu(margin - dist).pow(2)
+        return torch.mean(loss)

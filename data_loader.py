@@ -15,8 +15,7 @@ def get_loader(image_dir, crop_size=178, image_size=128,
     transform.append(T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)))
     transform = T.Compose(transform)
 
-    if dataset == 'RaFD':
-        dataset = ImageFolder(image_dir, transform)
+    dataset = ImageFolder(image_dir, transform)
 
     data_loader = data.DataLoader(dataset=dataset,
                                   batch_size=batch_size,
