@@ -4,7 +4,7 @@ from torchvision.datasets import ImageFolder
 
 
 def get_loader(image_dir, crop_size=178, image_size=128, 
-               batch_size=16, dataset='RaFD', mode='train', num_workers=1):
+               batch_size=16, mode='train', num_workers=1):
     """Build and return a data loader."""
     transform = []
     if mode == 'train':

@@ -3,15 +3,14 @@ import torch
 import numpy as np
 from PIL import Image
 from torchvision import transforms as T
-from torchvision.utils import save_image
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from model import Generator
-import argparse
-# from mtcnn import MTCNN
+from mtcnn import MTCNN
 import base64
 from io import BytesIO
+
 
 app = Flask(__name__)
 
@@ -21,7 +20,7 @@ model = None
 model_number = 211000  # Default model number
 
 # Reuse the utility functions from the original app.py
-def crop_face_mtcnn(pil_image, output_size=(256, 256), margin=30):
+def crop_face_mtcnn(pil_image, output_size=(256, 256), margin=50):
     image = np.array(pil_image)
     detector = MTCNN()
     faces = detector.detect_faces(image)
@@ -44,7 +43,7 @@ def crop_face_mtcnn(pil_image, output_size=(256, 256), margin=30):
 def label2onehot(labels, dim):
     batch_size = labels.size(0)
     out = torch.zeros(batch_size, dim)
-    out[torch.arange(batch_size, dtype=torch.long), labels.long()] = 1
+    out[np.arange(batch_size), labels.long()] = 1
     return out
 
 def create_labels(device:torch.device = "cpu"):
@@ -62,7 +61,7 @@ def load_model(model_number:int, device:torch.device = "cpu") -> None:
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file not found at {model_path}")
     model = Generator(64,7,6)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(torch.load(model_path))
     model = model.to(device)
 
 def denorm(x):
@@ -90,12 +89,11 @@ def inference(img : torch.Tensor, emotion_number:int, device:torch.device = "cpu
         load_model(model_number, device)
     with torch.inference_mode():    
         c_trg_list = create_labels(device)
-        x_fake_list = [img]
+        x_fake_list = []
         for c_trg in c_trg_list[start:end]:
             x_fake_list.append(model(img, c_trg))
         x_concat = torch.cat(x_fake_list,dim=3)
         image = denorm(x_concat.data.cpu())
-        # save_image(image, 'output.jpg', nrow=1, padding=0)
         return T.ToPILImage()(image.squeeze(0))
 
 @app.route('/')
@@ -112,19 +110,19 @@ def generate():
         # Convert base64 to PIL Image
         image_bytes = base64.b64decode(image_data)
         image = Image.open(BytesIO(image_bytes)).convert('RGB')
+        img_tensor = crop_face_mtcnn(image)
         
         # Convert to tensor once
-        img_tensor = convertImageToTensor(image, device)
-        
+        img_tensor = convertImageToTensor(img_tensor, device)
         # Generate the emotion transformations
         result_image = inference(img_tensor, emotion_number, device)
         
         # Convert result directly to base64
         buffered = BytesIO()
-        result_image.save(buffered, format="JPEG")
+        result_image.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode()
         
-        return jsonify({'image': f'data:image/jpeg;base64,{img_str}'})
+        return jsonify({'image': f'data:image/png;base64,{img_str}'})
         
     except Exception as e:
         print(f"Error: {str(e)}")  # Add debug print

@@ -12,11 +12,11 @@ import datetime
 class Solver(object):
     """Solver for training and testing StarGAN."""
 
-    def __init__(self , rafd_loader, config):
+    def __init__(self , loader, config):
         """Initialize configurations."""
 
         # Data loader.
-        self.rafd_loader = rafd_loader
+        self.loader = loader
 
         # Model configurations.
         self.c_dim = config.c_dim
@@ -30,7 +30,6 @@ class Solver(object):
         self.lambda_gp = config.lambda_gp
 
         # Training configurations.
-        self.dataset = config.dataset
         self.batch_size = config.batch_size
         self.num_iters = config.num_iters
         self.num_iters_decay = config.num_iters_decay
@@ -128,7 +127,7 @@ class Solver(object):
         out[np.arange(batch_size), labels.long()] = 1
         return out
 
-    def create_labels(self, c_org, c_dim=5, dataset='RaFD'):
+    def create_labels(self, c_org, c_dim=5):
         """Generate target domain labels for debugging and testing."""
         c_trg_list = []
         for i in range(c_dim):
@@ -157,14 +156,13 @@ class Solver(object):
     def train(self):
         """Train StarGAN within a single dataset."""
         # Set data loader.
-        if self.dataset == 'RaFD':
-            data_loader = self.rafd_loader
+        data_loader = self.loader
 
         # Fetch fixed inputs for debugging.
         data_iter = iter(data_loader)
         x_fixed, c_org = next(data_iter)
         x_fixed = x_fixed.to(self.device)
-        c_fixed_list = self.create_labels(c_org, self.c_dim, self.dataset)
+        c_fixed_list = self.create_labels(c_org, self.c_dim)
 
         # Learning rate cache for decaying.
         g_lr = self.g_lr
@@ -196,9 +194,8 @@ class Solver(object):
                 rand_idx = torch.randperm(label_org.size(0))
                 label_trg = label_org[rand_idx]
 
-                if self.dataset == 'RaFD':
-                    c_org = self.label2onehot(label_org, self.c_dim)
-                    c_trg = self.label2onehot(label_trg, self.c_dim)
+                c_org = self.label2onehot(label_org, self.c_dim)
+                c_trg = self.label2onehot(label_trg, self.c_dim)
 
                 x_real = x_real.to(self.device)           # Input images.
                 c_org = c_org.to(self.device)             # Original domain labels.
@@ -319,14 +316,13 @@ class Solver(object):
         self.restore_model(self.test_iters)
         
         # Set data loader.
-        if self.dataset == 'RaFD':
-            data_loader = self.rafd_loader
+        data_loader = self.loader
         
         with torch.no_grad():
             for i, (x_real, c_org) in enumerate(data_loader):
                 # Prepare input images and target domain labels.
                 x_real = x_real.to(self.device)
-                c_trg_list = self.create_labels(c_org, self.c_dim, self.dataset)
+                c_trg_list = self.create_labels(c_org, self.c_dim)
 
                 # Translate images.
                 x_fake_list = [x_real]
