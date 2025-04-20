@@ -246,7 +246,6 @@ class Solver(object):
                     # similarity_matrix = self.compute_similarity_matrix(x_fake)
                     # g_loss_comp = self.competitive_loss(similarity_matrix)
                     same_domain = (label_org == label_trg).float()
-                    print(same_domain)
                     same_domain = (label_org[:, None] == label_org[None, :]).int()
                     similarity_matrix = self.compute_similarity_matrix(x_fake)
                     g_loss_contrastive = self.contrastive_loss(similarity_matrix, same_domain)

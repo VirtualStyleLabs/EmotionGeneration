@@ -57,7 +57,7 @@ def create_labels(device:torch.device = "cpu"):
 def load_model(model_number:int, device:torch.device = "cpu") -> None:
     global model
     model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-                             "stargan_rafd", "models", f"{model_number}-G.ckpt")
+                             "stargan", "models", f"{model_number}-G.ckpt")
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file not found at {model_path}")
     model = Generator(64,7,6)

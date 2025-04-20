@@ -1,0 +1,9 @@
+torch
+tensorflow
+mtcnn
+pillow
+flask
+numpy
+torchvision
+opencv-python
+pandas
