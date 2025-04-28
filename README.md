@@ -50,11 +50,17 @@ StarGAN is chosen for this project because:
    - Fine-tune the model for high-quality outputs.
 
 5. **Evaluation**:
-   - Quantitative: Measure FID (Fréchet Inception Distance) to assess image quality.
    - Qualitative: Visual inspection of generated images.
 
 ---
+## Loss Curves:
+![Losses](losses.jpg)
 
+---
+## Results:
+![Results](results.png)
+
+---
 ## Project Structure (Planned)
 
 ```plaintext
